@@ -16,14 +16,14 @@ const DirectStripeTest: React.FC = () => {
     setLogs(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
   };
 
-  // Direct test using the Stripe API client from your ebook implementation
+  // Direct test using the Stripe API client (similar to the ebook implementation)
   const handleDirectStripeTest = async () => {
     setLoading(true);
     setError(null);
-    addLog('Starting direct Stripe test...');
+    addLog('Starting Stripe checkout test...');
 
     try {
-      // Prepare the request data
+      // Prepare the request data - using the same approach as in your ebook implementation
       const tierId = '2'; // Premium tier
       const successUrl = `${window.location.origin}/subscription/success`;
       const cancelUrl = `${window.location.origin}/subscription`;
@@ -32,7 +32,7 @@ const DirectStripeTest: React.FC = () => {
       addLog(`Success URL: ${successUrl}`);
       addLog(`Cancel URL: ${cancelUrl}`);
 
-      // Call the Edge Function directly with fetch (similar to your ebook implementation)
+      // Direct API call to the Edge Function - similar to your successful ebook implementation
       addLog('Calling Edge Function directly with fetch...');
       const response = await fetch(
         'https://guafuutwjluavxwkfvbk.supabase.co/functions/v1/create-subscription-checkout',
@@ -40,7 +40,6 @@ const DirectStripeTest: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            // Add authorization if needed
           },
           body: JSON.stringify({
             tierId,
@@ -56,20 +55,20 @@ const DirectStripeTest: React.FC = () => {
       addLog(`Response data: ${JSON.stringify(data)}`);
 
       if (!response.ok) {
-        setError(data.error || 'Error calling Edge Function');
+        setError(data.error || 'Error creating checkout session');
       } else if (data.url) {
-        addLog(`Direct checkout session created successfully!`);
-        addLog(`Redirecting to: ${data.url}`);
+        addLog(`Checkout session created successfully!`);
+        addLog(`Redirecting to Stripe checkout: ${data.url}`);
         window.location.href = data.url;
       } else {
-        addLog('No URL in response');
-        setError('No URL in response');
+        addLog('No checkout URL in response');
+        setError('No checkout URL returned');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       addLog(`Exception caught: ${errorMessage}`);
       setError(errorMessage);
-      console.error('Direct Stripe test error:', err);
+      console.error('Stripe checkout error:', err);
     } finally {
       setLoading(false);
     }

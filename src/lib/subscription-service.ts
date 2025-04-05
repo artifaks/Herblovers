@@ -116,62 +116,38 @@ export const createSubscriptionCheckout = async (
 ): Promise<{ sessionUrl?: string; error?: string }> => {
   try {
     console.log('Creating subscription checkout for tier:', tierId);
-    console.log('Success URL:', successUrl);
-    console.log('Cancel URL:', cancelUrl);
     
-    // Try direct fetch approach first (similar to your ebook implementation)
-    try {
-      console.log('Attempting direct API call to Edge Function');
-      const response = await fetch(
-        'https://guafuutwjluavxwkfvbk.supabase.co/functions/v1/create-subscription-checkout',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            tierId,
-            successUrl,
-            cancelUrl,
-          }),
-        }
-      );
-
-      const data = await response.json();
-      console.log('Direct API response:', data);
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error calling Edge Function');
+    // Direct API call to the Edge Function (similar to the ebook implementation)
+    const response = await fetch(
+      'https://guafuutwjluavxwkfvbk.supabase.co/functions/v1/create-subscription-checkout',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tierId,
+          successUrl,
+          cancelUrl,
+        }),
       }
+    );
 
-      if (data.url) {
-        console.log('Checkout URL from direct API:', data.url);
-        return { sessionUrl: data.url };
-      }
-    } catch (directError) {
-      console.error('Direct API call failed, falling back to supabase.functions.invoke', directError);
-    }
-    
-    // Fallback to supabase.functions.invoke
-    console.log('Falling back to supabase.functions.invoke');
-    const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
-      body: { tierId, successUrl, cancelUrl }
-    });
+    const data = await response.json();
+    console.log('Stripe checkout response:', data);
 
-    if (error) {
-      console.error('Error creating subscription checkout:', error);
-      return { error: error.message };
+    if (!response.ok) {
+      return { error: data.error || 'Error creating checkout session' };
     }
 
     if (!data.url) {
-      console.error('No URL returned from checkout session');
       return { error: 'No checkout URL returned' };
     }
 
     return { sessionUrl: data.url };
   } catch (error) {
     console.error('Error in createSubscriptionCheckout:', error);
-    return { error: 'Failed to create checkout session' };
+    return { error: error instanceof Error ? error.message : 'Failed to create checkout session' };
   }
 };
 
